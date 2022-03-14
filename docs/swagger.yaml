@@ -1,0 +1,50 @@
+basePath: '{{.BasePath}}'
+definitions:
+  main.IndexData:
+    properties:
+      content:
+        type: string
+      title:
+        type: string
+    type: object
+host: localhost:8088
+info:
+  contact: {}
+  description: Gin swagger
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Ginlol
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: 帳號密碼
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: body
+      summary: 初始
+      tags:
+      - Hello
+  /demo/v1/hello/{user}:
+    get:
+      description: 路徑傳入參數
+      parameters:
+      - description: 名字
+        in: path
+        name: user
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 初始
+      tags:
+      - Hello
+swagger: "2.0"
