@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	_ "ginlol/docs"
+
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
@@ -60,28 +62,35 @@ func hello(c *gin.Context) {
 	c.JSON(200, greet)
 }
 
-// @Summary 初始
+type Login struct {
+	User          string `form:"user" binding:"user"`
+	Password      string `form:"password" binding:"required"`
+	PasswordAgain string `form:"password-again" binding:"eqfield=Password"`
+}
+
+// @Summary "帳號密碼輸入"
 // @Description 登入
 // @Tags Hello
 // @accept mpfd
-// @Produce json
-// @Param form formData string true "帳號密碼輸入"
-// @Success 200 {object} json
+// @Produce application/json.
+// @Param user formData string true "Login struct"
+// @Param password formData string true "Login struct"
+// @Param password-again formData string true "Login struct"
+// @Success 200 {string} json "{"status": "You are logged in!"}"
+// @Failure 401 {string} json "{"status": "unauthorized"}"
+// @Failure 400 {string} json "{"error": err.Error()}"
 // @Router /login [post]
-type Login struct {
-	User     string `form:"user"`
-	Password string `form:"password"`
-}
-
 func login(c *gin.Context) {
 	var form Login
-	fmt.Println(form.User, form.Password)
-	if err := c.ShouldBind(&form); err != nil {
+
+	if err := c.Bind(&form); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
+
+	fmt.Println(form.User, " try log in.")
 
 	if form.User == "admin" && form.Password == "123" {
 		c.JSON(http.StatusOK, gin.H{

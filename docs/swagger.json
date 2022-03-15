@@ -32,14 +32,13 @@
         },
         "/demo/v1/hello/{user}": {
             "get": {
-                "description": "路徑傳入參數",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Hello"
                 ],
-                "summary": "初始",
+                "summary": "說HALO",
                 "parameters": [
                     {
                         "type": "string",
@@ -52,6 +51,64 @@
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "description": "登入",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hello"
+                ],
+                "summary": "\"帳號密碼輸入\"",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Login struct",
+                        "name": "user",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Login struct",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Login struct",
+                        "name": "password-again",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"status\": \"You are logged in!\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"error\": err.Error()}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "{\"status\": \"unauthorized\"}",
                         "schema": {
                             "type": "string"
                         }

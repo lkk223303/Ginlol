@@ -30,7 +30,6 @@ paths:
       - Hello
   /demo/v1/hello/{user}:
     get:
-      description: 路徑傳入參數
       parameters:
       - description: 名字
         in: path
@@ -44,7 +43,46 @@ paths:
           description: OK
           schema:
             type: string
-      summary: 初始
+      summary: 說HALO
+      tags:
+      - Hello
+  /login:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 登入
+      parameters:
+      - description: Login struct
+        in: formData
+        name: user
+        required: true
+        type: string
+      - description: Login struct
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: Login struct
+        in: formData
+        name: password-again
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"status": "You are logged in!"}'
+          schema:
+            type: string
+        "400":
+          description: '{"error": err.Error()}'
+          schema:
+            type: string
+        "401":
+          description: '{"status": "unauthorized"}'
+          schema:
+            type: string
+      summary: '"帳號密碼輸入"'
       tags:
       - Hello
 swagger: "2.0"
