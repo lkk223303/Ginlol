@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Gin swagger",
+        "description": "Ginlol",
         "title": "Ginlol",
         "contact": {},
         "license": {
@@ -59,16 +59,24 @@
             }
         },
         "/login": {
-            "post": {
-                "description": "登入",
-                "consumes": [
-                    "application/x-www-form-urlencoded"
-                ],
+            "get": {
                 "produces": [
-                    "application/json"
+                    "text/html"
                 ],
                 "tags": [
-                    "Hello"
+                    "login"
+                ],
+                "summary": "呈現登入頁面"
+            },
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json."
+                ],
+                "tags": [
+                    "login"
                 ],
                 "summary": "\"帳號密碼輸入\"",
                 "parameters": [

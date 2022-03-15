@@ -6,7 +6,10 @@ var UserData map[string]string
 
 func init() {
 	UserData = map[string]string{
-		"test": "test",
+		"test":  "test",
+		"admin": "123",
+		"Kent":  "111",
+		"222":   "222",
 	}
 }
 

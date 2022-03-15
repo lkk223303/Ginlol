@@ -10,7 +10,7 @@ definitions:
 host: localhost:8088
 info:
   contact: {}
-  description: Gin swagger
+  description: Ginlol
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -47,10 +47,15 @@ paths:
       tags:
       - Hello
   /login:
+    get:
+      produces:
+      - text/html
+      summary: 呈現登入頁面
+      tags:
+      - login
     post:
       consumes:
-      - application/x-www-form-urlencoded
-      description: 登入
+      - multipart/form-data
       parameters:
       - description: Login struct
         in: formData
@@ -68,7 +73,7 @@ paths:
         required: true
         type: string
       produces:
-      - application/json
+      - application/json.
       responses:
         "200":
           description: '{"status": "You are logged in!"}'
@@ -84,5 +89,5 @@ paths:
             type: string
       summary: '"帳號密碼輸入"'
       tags:
-      - Hello
+      - login
 swagger: "2.0"

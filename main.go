@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -18,20 +19,21 @@ type IndexData struct {
 
 // @title Ginlol
 // @version 1.0
-// @description Gin swagger
+// @description Ginlol
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8088
 func main() {
-
-	router := gin.Default()
-	port := 8088
+	router := gin.Default() // 啟動server
+	port := 8088            // port number setting
 	url := ginSwagger.URL(fmt.Sprintf("http://localhost:%d/swagger/doc.json", port))
-	router.LoadHTMLGlob("template/*")
+	router.LoadHTMLGlob("template/html/*")
+	router.Static("/assets", "./template/assets")
 
 	router.GET("/", test)
 	router.Group("/demo/v1").GET("/hello/:user", hello)
-	router.POST("/login", login)
+	router.GET("/login", loginPage)
+	router.POST("/login", loginAuth)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	router.Run(fmt.Sprintf(":%d", port))
@@ -62,15 +64,22 @@ func hello(c *gin.Context) {
 	c.JSON(200, greet)
 }
 
+// @Summary 呈現登入頁面
+// @Tags login
+// @Produce text/html
+// @Router /login [get]
+func loginPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "login.html", nil)
+}
+
 type Login struct {
-	User          string `form:"user" binding:"user"`
-	Password      string `form:"password" binding:"required"`
-	PasswordAgain string `form:"password-again" binding:"eqfield=Password"`
+	User          string `form:"user" binding:"required"`                   //判斷是否有輸入使用者帳號密碼
+	Password      string `form:"password" binding:"required"`               //判斷是否有輸入使用者帳號密碼
+	PasswordAgain string `form:"password-again" binding:"eqfield=Password"` //
 }
 
 // @Summary "帳號密碼輸入"
-// @Description 登入
-// @Tags Hello
+// @Tags login
 // @accept mpfd
 // @Produce application/json.
 // @Param user formData string true "Login struct"
@@ -80,9 +89,10 @@ type Login struct {
 // @Failure 401 {string} json "{"status": "unauthorized"}"
 // @Failure 400 {string} json "{"error": err.Error()}"
 // @Router /login [post]
-func login(c *gin.Context) {
+func loginAuth(c *gin.Context) {
 	var form Login
 
+	// 綁定login data 到form *Login
 	if err := c.Bind(&form); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -90,15 +100,32 @@ func login(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(form.User, " try log in.")
-
-	if form.User == "admin" && form.Password == "123" {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "You are logged in!",
+	// 判斷使用者是否存在資料庫, 以及是否帳號密碼正確
+	if err := Auth(form.User, form.Password); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
 		})
 		return
+	} else if form.User == "admin" && form.Password == "123" { // 如果輸入 admin帳密
+		c.JSON(http.StatusOK, gin.H{
+			"success": "Admin logged in!",
+		})
+		return
+	} else {
+		// 判斷使用者是否一二次密碼相同
+		if form.Password == form.PasswordAgain {
+			c.JSON(http.StatusOK, gin.H{
+				"success": "登入成功",
+			})
+			return
+
+		} else { //不會進到這邊 因為在 struct Login 驗證
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": errors.New("兩次輸入密碼不相同"),
+			})
+			return
+		}
 	}
-	c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
 
 }
 
