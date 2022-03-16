@@ -16,6 +16,8 @@ import (
 )
 
 // db const
+var db *sql.DB
+
 const (
 	USERNAME = "kent"
 	PASSWORD = "0000"
@@ -49,19 +51,22 @@ func main() {
 	// DB
 	conn := fmt.Sprintf("%s:%s@%s(%s:%d)/%s", USERNAME, PASSWORD, NETWORK, SERVER, PORT, DATABASE)
 
-	db, err := sql.Open("mysql", conn)
+	dbConnect, err := sql.Open("mysql", conn)
 
 	if err != nil {
-		fmt.Println("開啟SQL連線發生錯誤：", err)
+		fmt.Println("開啟SQL連線發生錯誤: ", err)
 		return
 	}
-	if err := db.Ping(); err != nil {
+	if err := dbConnect.Ping(); err != nil {
 		fmt.Println("資料庫連線錯誤：", err)
 
 	}
-	defer db.Close()
-	// CreateTable(db)
-	InsertUser(db, "user", "user")
+
+	db = dbConnect
+	db.SetMaxOpenConns(10) // 可設置最大DB連線數，設<=0則無上限（連線分成 in-Use正在執行任務 及 idle執行完成後的閒置 兩種）
+	db.SetMaxIdleConns(10) // 設置最大idle閒置連線數。
+	// 更多用法可以 進 sql.DBStats{}、sql.DB{} 裡面看
+	defer dbConnect.Close()
 
 	// Server
 	router := gin.Default() // 啟動server
@@ -93,7 +98,7 @@ func CreateTable(db *sql.DB) error {
 	return nil
 }
 
-// 新增user資料
+// 新增user資料(會檢查是否存在)
 func InsertUser(DB *sql.DB, username, password string) error {
 
 	// 先查詢使用者是否存在
