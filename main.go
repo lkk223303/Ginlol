@@ -1,20 +1,42 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 
 	_ "ginlol/docs"
 
+	_ "github.com/go-sql-driver/mysql"
+
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
+// db const
+const (
+	USERNAME = "kent"
+	PASSWORD = "0000"
+	NETWORK  = "tcp"
+	SERVER   = "127.0.0.1"
+	PORT     = 3306
+	DATABASE = "Ginlol"
+)
+
+/////////// Model define ///////////
 type IndexData struct {
 	Title   string
 	Content string
+}
+
+// Login時會用到的 struct
+type Login struct {
+	ID            string
+	User          string `form:"user" binding:"required"`                   //判斷是否有輸入使用者帳號密碼
+	Password      string `form:"password" binding:"required"`               //判斷是否有輸入使用者帳號密碼
+	PasswordAgain string `form:"password-again" binding:"eqfield=Password"` //
 }
 
 // @title Ginlol
@@ -24,6 +46,24 @@ type IndexData struct {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8088
 func main() {
+	// DB
+	conn := fmt.Sprintf("%s:%s@%s(%s:%d)/%s", USERNAME, PASSWORD, NETWORK, SERVER, PORT, DATABASE)
+
+	db, err := sql.Open("mysql", conn)
+
+	if err != nil {
+		fmt.Println("開啟SQL連線發生錯誤：", err)
+		return
+	}
+	if err := db.Ping(); err != nil {
+		fmt.Println("資料庫連線錯誤：", err)
+
+	}
+	defer db.Close()
+	// CreateTable(db)
+	InsertUser(db, "user", "user")
+
+	// Server
 	router := gin.Default() // 啟動server
 	port := 8088            // port number setting
 	url := ginSwagger.URL(fmt.Sprintf("http://localhost:%d/swagger/doc.json", port))
@@ -37,6 +77,53 @@ func main() {
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	router.Run(fmt.Sprintf(":%d", port))
+}
+
+/////////// 資料庫操作 functions ///////////
+// 對資料庫進行，建立一個名為 user 的 table
+func CreateTable(db *sql.DB) error {
+	sql := `CREATE TABLE IF NOT EXISTS users(id INT(4) PRIMARY KEY AUTO_INCREMENT NOT NULL,
+	username VARCHAR(64),password VARCHAR(64)
+	);`
+	if _, err := db.Exec(sql); err != nil {
+		fmt.Println("建立 Table發生錯誤: ", err)
+		return err
+	}
+	fmt.Println("建立 Table 成功！")
+	return nil
+}
+
+// 新增user資料
+func InsertUser(DB *sql.DB, username, password string) error {
+
+	// 先查詢使用者是否存在
+	fmt.Println("查詢使用者中...")
+	if err := QueryUser(DB, username); err == nil {
+		fmt.Println("使用者已經存在！")
+	} else {
+		fmt.Println("新增使用者中...")
+		result, err := DB.Exec("insert INTO users(username,password) values(?,?)", username, password)
+		if err != nil {
+			fmt.Printf("建立使用者失敗，原因：%v", err)
+			return err
+		}
+		fmt.Println("建立資料成功 result:", result)
+	}
+
+	return nil
+}
+
+// 查詢user資料
+func QueryUser(db *sql.DB, username string) error {
+	user := new(Login)
+	row := db.QueryRow("SELECT * FROM users WHERE username=?", username)
+	if err := row.Scan(&user.ID, &user.User, &user.Password); err != nil {
+		fmt.Printf("查詢使用者失敗，原因：%v\n", err)
+		return err
+	}
+
+	fmt.Printf("查詢使用者 ID: %s\tName: %s\tPassword: %s\t", user.ID, user.User, user.Password)
+	return nil
 }
 
 // @Summary 初始
@@ -70,12 +157,6 @@ func hello(c *gin.Context) {
 // @Router /login [get]
 func loginPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "login.html", nil)
-}
-
-type Login struct {
-	User          string `form:"user" binding:"required"`                   //判斷是否有輸入使用者帳號密碼
-	Password      string `form:"password" binding:"required"`               //判斷是否有輸入使用者帳號密碼
-	PasswordAgain string `form:"password-again" binding:"eqfield=Password"` //
 }
 
 // @Summary "帳號密碼輸入"
