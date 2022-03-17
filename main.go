@@ -2,12 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 
 	_ "ginlol/docs"
 
+	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +16,8 @@ import (
 )
 
 // db const
-var db *sql.DB
+var DB *sql.DB
+var RC *redis.Client
 
 const (
 	USERNAME = "kent"
@@ -34,12 +35,53 @@ type IndexData struct {
 }
 
 // Login時會用到的 struct
-type Login struct {
+type User struct {
 	ID            string
-	User          string `form:"user" binding:"required"`                   //判斷是否有輸入使用者帳號密碼
-	Password      string `form:"password" binding:"required"`               //判斷是否有輸入使用者帳號密碼
-	PasswordAgain string `form:"password-again" binding:"eqfield=Password"` //
+	User          string `form:"user" binding:"required"`                   //使用者帳號
+	Password      string `form:"password" binding:"required"`               //使用者密碼
+	PasswordAgain string `form:"password-again" binding:"eqfield=Password"` //二次密碼
+	Secret               //匿名欄位
 }
+
+// 新增user資料到資料庫(會檢查是否存在)
+func (u *User) InsertUser(db *sql.DB, username, password string) error {
+	// 先查詢使用者是否存在
+	fmt.Println("查詢使用者中...")
+	if err := QueryUser(db, username); err != nil {
+		fmt.Println("新增使用者中...")
+		result, err := db.Exec("insert INTO users(username,password) values(?,?)", username, password)
+		if err != nil {
+			fmt.Printf("建立使用者失敗，原因：%v", err)
+			return err
+		}
+		r, _ := result.RowsAffected()
+		fmt.Println("建立資料成功 result:", r)
+	} else {
+		return fmt.Errorf("user exists.")
+	}
+
+	return nil
+}
+
+type Admin struct {
+	User
+	AdminLevel int
+}
+
+type Secret struct {
+	Token        string `json:"token"`
+	GoogleOauth2 string `json:"googleoauth2"`
+}
+type Member interface {
+	Register()
+	Login()
+	Delete()
+	ChangePassword()
+}
+
+// type Changer interface {
+// 	ChangePassword()
+// }
 
 // @title Ginlol
 // @version 1.0
@@ -48,6 +90,25 @@ type Login struct {
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8088
 func main() {
+
+	// Redis
+	client := redis.NewClient(&redis.Options{
+		Addr:     "127.0.0.1:6379",
+		Password: "",
+		DB:       0,
+	})
+
+	defer client.Close()
+
+	pong, err := client.Ping().Result()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	} else {
+		fmt.Println("ping result: ", pong)
+	}
+	RC = client
+
 	// DB
 	conn := fmt.Sprintf("%s:%s@%s(%s:%d)/%s", USERNAME, PASSWORD, NETWORK, SERVER, PORT, DATABASE)
 
@@ -62,9 +123,9 @@ func main() {
 
 	}
 
-	db = dbConnect
-	db.SetMaxOpenConns(10) // 可設置最大DB連線數，設<=0則無上限（連線分成 in-Use正在執行任務 及 idle執行完成後的閒置 兩種）
-	db.SetMaxIdleConns(10) // 設置最大idle閒置連線數。
+	DB = dbConnect
+	DB.SetMaxOpenConns(10) // 可設置最大DB連線數，設<=0則無上限（連線分成 in-Use正在執行任務 及 idle執行完成後的閒置 兩種）
+	DB.SetMaxIdleConns(10) // 設置最大idle閒置連線數。
 	// 更多用法可以 進 sql.DBStats{}、sql.DB{} 裡面看
 	defer dbConnect.Close()
 
@@ -98,29 +159,9 @@ func CreateTable(db *sql.DB) error {
 	return nil
 }
 
-// 新增user資料(會檢查是否存在)
-func InsertUser(DB *sql.DB, username, password string) error {
-
-	// 先查詢使用者是否存在
-	fmt.Println("查詢使用者中...")
-	if err := QueryUser(DB, username); err == nil {
-		fmt.Println("使用者已經存在！")
-	} else {
-		fmt.Println("新增使用者中...")
-		result, err := DB.Exec("insert INTO users(username,password) values(?,?)", username, password)
-		if err != nil {
-			fmt.Printf("建立使用者失敗，原因：%v", err)
-			return err
-		}
-		fmt.Println("建立資料成功 result:", result)
-	}
-
-	return nil
-}
-
 // 查詢user資料
 func QueryUser(db *sql.DB, username string) error {
-	user := new(Login)
+	user := new(User)
 	row := db.QueryRow("SELECT * FROM users WHERE username=?", username)
 	if err := row.Scan(&user.ID, &user.User, &user.Password); err != nil {
 		fmt.Printf("查詢使用者失敗，原因：%v\n", err)
@@ -129,6 +170,22 @@ func QueryUser(db *sql.DB, username string) error {
 
 	fmt.Printf("查詢使用者 ID: %s\tName: %s\tPassword: %s\t", user.ID, user.User, user.Password)
 	return nil
+}
+
+// 新增user資料
+func InsertUser(db *sql.DB, username, password string) error {
+
+	fmt.Println("建立使用者中...")
+	result, err := db.Exec("insert INTO users(username,password) values(?,?)", username, password)
+	if err != nil {
+		fmt.Printf("建立使用者失敗，原因：%v", err)
+		return err
+	} else {
+		r, _ := result.RowsAffected()
+		fmt.Println("建立資料成功 result:", r)
+
+		return err
+	}
 }
 
 // @Summary 初始
@@ -164,21 +221,21 @@ func loginPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "login.html", nil)
 }
 
-// @Summary "帳號密碼輸入"
+// @Summary "帳號密碼輸入,如果沒有就新增"
 // @Tags login
 // @accept mpfd
 // @Produce application/json.
-// @Param user formData string true "Login struct"
-// @Param password formData string true "Login struct"
-// @Param password-again formData string true "Login struct"
+// @Param user formData string true "User struct"
+// @Param password formData string true "User struct"
+// @Param password-again formData string true "User struct"
 // @Success 200 {string} json "{"status": "You are logged in!"}"
 // @Failure 401 {string} json "{"status": "unauthorized"}"
 // @Failure 400 {string} json "{"error": err.Error()}"
 // @Router /login [post]
 func loginAuth(c *gin.Context) {
-	var form Login
+	var form User
 
-	// 綁定login data 到form *Login
+	// 綁定User data 到form *User
 	if err := c.Bind(&form); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -186,33 +243,51 @@ func loginAuth(c *gin.Context) {
 		return
 	}
 
-	// 判斷使用者是否存在資料庫, 以及是否帳號密碼正確
-	if err := Auth(form.User, form.Password); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	} else if form.User == "admin" && form.Password == "123" { // 如果輸入 admin帳密
-		c.JSON(http.StatusOK, gin.H{
-			"success": "Admin logged in!",
-		})
-		return
-	} else {
+	// 判斷使用者是否存在資料庫 是否帳號密碼正確 是否為admin, 如果沒有就新增,如果有給予登入和token
+	if err := QueryUser(DB, form.User); err != nil {
 		// 判斷使用者是否一二次密碼相同
 		if form.Password == form.PasswordAgain {
-			c.JSON(http.StatusOK, gin.H{
-				"success": "登入成功",
-			})
+			if err := InsertUser(DB, form.User, form.Password); err == nil {
+				c.JSON(http.StatusOK, gin.H{
+					"success": "註冊成功",
+				})
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": err.Error(),
+				})
+			}
 			return
-
-		} else { //不會進到這邊 因為在 struct Login 驗證
+		} else {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": errors.New("兩次輸入密碼不相同"),
+				"error": "兩次密碼須相同",
 			})
-			return
 		}
-	}
 
+	} else {
+		// Login process...查詢到user須做密碼驗證
+		// 實做產生jwt tocken
+		// 將token 存在cookie
+		// 使用者cookie存入 redis 5分鐘
+		var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+
+		// user := QueryUser(DB, form.User)
+		// // 密碼驗證
+		// if form.Password == user {
+		// }
+
+		err := RC.Set(form.User, token, 0)
+		if err.Err() != nil {
+			fmt.Println("Set error: ", err)
+			return
+		} else {
+			fmt.Println("token SET !")
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": "Logged in!",
+		})
+		return
+	}
 }
 
 // // @Summary 登入含大頭照 (050777)
