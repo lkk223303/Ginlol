@@ -45,22 +45,18 @@ type User struct {
 
 // 新增user資料到資料庫(會檢查是否存在)
 func (u *User) InsertUser(db *sql.DB, username, password string) error {
-	// 先查詢使用者是否存在
-	fmt.Println("查詢使用者中...")
-	if err := QueryUser(db, username); err != nil {
-		fmt.Println("新增使用者中...")
-		result, err := db.Exec("insert INTO users(username,password) values(?,?)", username, password)
-		if err != nil {
-			fmt.Printf("建立使用者失敗，原因：%v", err)
-			return err
-		}
+
+	fmt.Println("建立使用者中...")
+	result, err := db.Exec("insert INTO users(username,password) values(?,?)", username, password)
+	if err != nil {
+		fmt.Printf("建立使用者失敗，原因：%v", err)
+		return err
+	} else {
 		r, _ := result.RowsAffected()
 		fmt.Println("建立資料成功 result:", r)
-	} else {
-		return fmt.Errorf("user exists.")
-	}
 
-	return nil
+		return err
+	}
 }
 
 type Admin struct {
@@ -160,16 +156,16 @@ func CreateTable(db *sql.DB) error {
 }
 
 // 查詢user資料
-func QueryUser(db *sql.DB, username string) error {
+func QueryUser(db *sql.DB, username string) (error, *User) {
 	user := new(User)
 	row := db.QueryRow("SELECT * FROM users WHERE username=?", username)
 	if err := row.Scan(&user.ID, &user.User, &user.Password); err != nil {
 		fmt.Printf("查詢使用者失敗，原因：%v\n", err)
-		return err
+		return err, user
 	}
 
 	fmt.Printf("查詢使用者 ID: %s\tName: %s\tPassword: %s\t", user.ID, user.User, user.Password)
-	return nil
+	return nil, user
 }
 
 // 新增user資料
@@ -244,7 +240,7 @@ func loginAuth(c *gin.Context) {
 	}
 
 	// 判斷使用者是否存在資料庫 是否帳號密碼正確 是否為admin, 如果沒有就新增,如果有給予登入和token
-	if err := QueryUser(DB, form.User); err != nil {
+	if err, _ := QueryUser(DB, form.User); err != nil {
 		// 判斷使用者是否一二次密碼相同
 		if form.Password == form.PasswordAgain {
 			if err := InsertUser(DB, form.User, form.Password); err == nil {
