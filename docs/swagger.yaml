@@ -1,12 +1,3 @@
-basePath: '{{.BasePath}}'
-definitions:
-  main.IndexData:
-    properties:
-      content:
-        type: string
-      title:
-        type: string
-    type: object
 host: localhost:8088
 info:
   contact: {}
@@ -50,6 +41,7 @@ paths:
     get:
       produces:
       - text/html
+      responses: {}
       summary: 呈現登入頁面
       tags:
       - login
@@ -57,17 +49,17 @@ paths:
       consumes:
       - multipart/form-data
       parameters:
-      - description: Login struct
+      - description: User struct
         in: formData
         name: user
         required: true
         type: string
-      - description: Login struct
+      - description: User struct
         in: formData
         name: password
         required: true
         type: string
-      - description: Login struct
+      - description: User struct
         in: formData
         name: password-again
         required: true
@@ -87,7 +79,7 @@ paths:
           description: '{"status": "unauthorized"}'
           schema:
             type: string
-      summary: '"帳號密碼輸入"'
+      summary: '"帳號密碼輸入,如果沒有就新增"'
       tags:
       - login
 swagger: "2.0"

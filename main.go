@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	_ "ginlol/docs"
+	_ "Ginlol/docs"
 
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
@@ -139,10 +139,10 @@ func loginAuth(c *gin.Context) {
 		// 使用者cookie存入 redis 5分鐘
 		var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
 
+
 		if user.Password == form.Password {
 			redisCmd := RC.Set(form.User, token, 30*time.Second)
 			if redisCmd.Err() != nil {
-
 				fmt.Println("Set error: ", redisCmd.Err())
 				return
 			} else {

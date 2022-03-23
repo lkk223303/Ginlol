@@ -11,7 +11,6 @@
         "version": "1.0"
     },
     "host": "localhost:8088",
-    "basePath": "{{.BasePath}}",
     "paths": {
         "/": {
             "get": {
@@ -66,7 +65,8 @@
                 "tags": [
                     "login"
                 ],
-                "summary": "呈現登入頁面"
+                "summary": "呈現登入頁面",
+                "responses": {}
             },
             "post": {
                 "consumes": [
@@ -78,25 +78,25 @@
                 "tags": [
                     "login"
                 ],
-                "summary": "\"帳號密碼輸入\"",
+                "summary": "\"帳號密碼輸入,如果沒有就新增\"",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Login struct",
+                        "description": "User struct",
                         "name": "user",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Login struct",
+                        "description": "User struct",
                         "name": "password",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Login struct",
+                        "description": "User struct",
                         "name": "password-again",
                         "in": "formData",
                         "required": true
@@ -121,19 +121,6 @@
                             "type": "string"
                         }
                     }
-                }
-            }
-        }
-    },
-    "definitions": {
-        "main.IndexData": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
                 }
             }
         }

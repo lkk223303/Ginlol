@@ -17,6 +17,8 @@ func RedisOn() {
 
 	// defer client.Close()
 
+	
+	// ctx:= context.Background()
 	pong, err := client.Ping().Result()
 	if err != nil {
 		fmt.Println(err.Error())
