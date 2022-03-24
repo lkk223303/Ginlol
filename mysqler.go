@@ -31,9 +31,7 @@ func MariaDBOn() {
 
 // 對資料庫進行，建立一個名為 user 的 table
 func CreateTable(db *sql.DB) error {
-	sql := `CREATE TABLE IF NOT EXISTS users(id INT(4) PRIMARY KEY AUTO_INCREMENT NOT NULL,
-	username VARCHAR(64),password VARCHAR(64)
-	);`
+	sql := "CREATE TABLE IF NOT EXISTS `users`(id INT(4) PRIMARY KEY AUTO_INCREMENT NOT NULL, `username` VARCHAR(64),`password` VARCHAR(64));"
 	if _, err := db.Exec(sql); err != nil {
 		fmt.Println("建立 Table發生錯誤: ", err)
 		return err
@@ -46,7 +44,7 @@ func CreateTable(db *sql.DB) error {
 func InsertUser(db *sql.DB, username, password string) error {
 
 	fmt.Println("建立使用者中...")
-	result, err := db.Exec("insert INTO users(username,password) values(?,?)", username, password)
+	result, err := db.Exec("INSERT INTO `users`(username,password) values(?,?)", username, password)
 	if err != nil {
 		fmt.Printf("建立使用者失敗，原因：%v", err)
 		return err
@@ -62,7 +60,7 @@ func InsertUser(db *sql.DB, username, password string) error {
 // 查詢 Username 並回傳結果
 func QueryUser(db *sql.DB, username string) (error, *User) {
 	user := new(User)
-	row := db.QueryRow("SELECT * FROM users WHERE username=?", username)
+	row := db.QueryRow("SELECT * FROM `users` WHERE `username`=?", username)
 	if err := row.Scan(&user.ID, &user.User, &user.Password); err != nil {
 		fmt.Printf("查詢使用者失敗，原因：%v\n", err)
 		return err, user
@@ -75,7 +73,7 @@ func QueryUser(db *sql.DB, username string) (error, *User) {
 // User mehtod只會刪除並回傳成功與否(不檢查)
 func DeleteUser(db *sql.DB, username string) error {
 
-	result, err := db.Exec("DELETE FROM users WHERE username=?", username)
+	result, err := db.Exec("DELETE FROM `users` WHERE `username`=?", username)
 	if err != nil {
 		fmt.Println("Result: ", result, "Error: ", err)
 	}
@@ -86,12 +84,12 @@ func DeleteUser(db *sql.DB, username string) error {
 // 檢查是否輸入正確帳號,密碼,二次密碼，並回傳密碼更改是否成功和新密碼
 func ChangePassword(db *sql.DB, username, password, password2 string) {
 	var user *User
-	row := db.QueryRow("SELECT FROM users WHERE username=?", username)
+	row := db.QueryRow("SELECT FROM `users` WHERE `username`=?", username)
 	if err := row.Scan(&user.ID, &user.User, &user.Password, &user.PasswordAgain); err != nil {
 		fmt.Printf("查詢使用者失敗，原因：%v\n", err)
 	}
 	if username == user.User && password == user.Password && password2 == user.PasswordAgain {
-		result, err := db.Exec("UPDATE FROM users SET password=? WHERE username=?", password, username)
+		result, err := db.Exec("UPDATE FROM `users` SET `password`=? WHERE `username`=?", password, username)
 		if err != nil {
 			fmt.Println("UPDATE error: ", err)
 		} else {

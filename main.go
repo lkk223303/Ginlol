@@ -3,8 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
+
+	_ "net/http/pprof"
 
 	_ "Ginlol/docs"
 
@@ -39,6 +42,16 @@ func main() {
 
 	MariaDBOn()
 	RedisOn()
+	s := DB.Stats()
+	fmt.Println(s.InUse)
+
+	grpcChangePassword("grpc","0","9999")
+	
+
+	// Profiling 
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	// Server
 	router := gin.Default() // 啟動server

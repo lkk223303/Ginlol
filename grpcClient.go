@@ -44,7 +44,7 @@ func grpcInsertUser(username, password string) error {
 		log.Fatalln(err.Error())
 		return err
 	}else{
-		log.Printf("User Inserted: %s", r.GetReply())
+		log.Printf(r.GetReply())
 	}
 
 	grpcClientOff(client)
@@ -71,15 +71,15 @@ func grpcQueryUser( username string) error {
 	return nil	
 }
 
-// User mehtod只會刪除並回傳成功與否(不檢查)
-func grpcDeleteUser(username string) error {
+// 給予帳號密碼 刪除並回傳成功與否 (會刪除所有相同帳號密碼的人!)
+func grpcDeleteUser(username,password string) error {
 	client := grpcClientOn()
 	pbService := pb.NewHelloServiceClient(client)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// 執行 QueryUser 方法
-	r, err := pbService.DeleteUser(ctx, &pb.DeleteRequest{Username: username})
+	r, err := pbService.DeleteUser(ctx, &pb.DeleteRequest{Username: username,Password:password})
 	if err != nil {
 		log.Fatalln(err.Error())
 		return err
@@ -91,20 +91,20 @@ func grpcDeleteUser(username string) error {
 	return nil
 }
 
-// 檢查是否輸入正確帳號,密碼,二次密碼，並回傳密碼更改是否成功和新密碼
-func grpcChangePassword(username, password, password2 string) error{
+// 檢查是否輸入正確帳號,密碼 並回傳密碼更改是否成功和新密碼,password2 是新密碼
+func grpcChangePassword(username, password, newPassword string) error{
 	client := grpcClientOn()
 	pbService := pb.NewHelloServiceClient(client)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// 執行 QueryUser 方法
-	r, err := pbService.ChangePassword(ctx, &pb.ChangePasswordRequest{Username: username})
+	r, err := pbService.ChangePassword(ctx, &pb.ChangePasswordRequest{Username: username,Password: password,NewPassword: newPassword})
 	if err != nil {
 		log.Fatalln(err.Error())
 		return err
 	}else{
-		log.Printf("Password Changed: %s", r.GetReply())
+		log.Printf(r.GetReply())
 	}
 
 	grpcClientOff(client)
