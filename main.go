@@ -10,6 +10,7 @@ import (
 	_ "net/http/pprof"
 
 	_ "Ginlol/docs"
+	pb "acc_service/proto"
 
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
@@ -42,10 +43,12 @@ func main() {
 
 	MariaDBOn()
 	RedisOn()
-	s := DB.Stats()
-	fmt.Println(s.InUse)
+	// gRPC init
+	client := grpcClientOn()
+	PB := pb.NewHelloServiceClient(client) //建立service通道
+	defer grpcClientOff(client)
 
-	grpcChangePassword("grpc","0","9999")
+	RouteChat(PB,20)
 	
 
 	// Profiling 
