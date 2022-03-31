@@ -10,7 +10,6 @@ import (
 	_ "net/http/pprof"
 
 	_ "Ginlol/docs"
-	pb "acc_service/proto"
 
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
@@ -43,15 +42,16 @@ func main() {
 
 	MariaDBOn()
 	RedisOn()
-	// gRPC init
-	client := grpcClientOn()
-	PB := pb.NewHelloServiceClient(client) //建立service通道
-	defer grpcClientOff(client)
 
-	RouteChat(PB,20)
+	// gRPC init
+	// client := grpcClientOn()
+	// PB := pb.NewHelloServiceClient(client) //建立service通道
+	// defer grpcClientOff(client)
+
+	// RouteChat(PB,20)
 	
 
-	// Profiling 
+	// Profiling 好像是可以看到
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
@@ -63,10 +63,13 @@ func main() {
 	router.LoadHTMLGlob("template/html/*")
 	router.Static("/assets", "./template/assets")
 
-	router.GET("/", test)
+	router.GET("/", GoogleLogin)
 	router.Group("/demo/v1").GET("/hello/:user", hello)
 	router.GET("/login", loginPage)
 	router.POST("/login", loginAuth)
+	router.Group("/oauth").GET("/google/url",LoginWithGoogleOAuth)
+	router.Group("/oauth").GET("/google/login",GoogleLogin)
+
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	router.Run(fmt.Sprintf(":%d", port))
