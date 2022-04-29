@@ -25,9 +25,7 @@ func grpcClientOn()*grpc.ClientConn {
 
 	return conn
 }
-func grpcClientOff(conn *grpc.ClientConn) {
-	conn.Close()
-}
+
 
 
 /////////// gRPC呼叫 gRPC server 進行資料庫操作 ///////////

@@ -11,6 +11,7 @@
         "version": "1.0"
     },
     "host": "localhost:8088",
+    "basePath": "{{.BasePath}}",
     "paths": {
         "/": {
             "get": {
@@ -65,8 +66,7 @@
                 "tags": [
                     "login"
                 ],
-                "summary": "呈現登入頁面",
-                "responses": {}
+                "summary": "呈現登入頁面"
             },
             "post": {
                 "consumes": [
@@ -121,6 +121,19 @@
                             "type": "string"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.IndexData": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         }

@@ -1,3 +1,12 @@
+basePath: '{{.BasePath}}'
+definitions:
+  main.IndexData:
+    properties:
+      content:
+        type: string
+      title:
+        type: string
+    type: object
 host: localhost:8088
 info:
   contact: {}
@@ -41,7 +50,6 @@ paths:
     get:
       produces:
       - text/html
-      responses: {}
       summary: 呈現登入頁面
       tags:
       - login
