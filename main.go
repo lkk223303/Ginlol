@@ -75,7 +75,14 @@ func main() {
 	stop := make(chan struct{}, 0)
 	// for debug
 	go func() {
-		done <- pprof(stop)
+		pprof(stop)
+	}()
+	go func() {
+		for i := 0; i < 5; i++ {
+			time.Sleep(1 * time.Second)
+			fmt.Println(i)
+		}
+		done <- fmt.Errorf("It's an error")
 	}()
 	// main service
 	go func() {
@@ -96,14 +103,6 @@ func main() {
 
 }
 
-func app(stop <-chan struct{}) error {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("pong"))
-	})
-	return server(mux, ":8080", stop)
-}
-
 func pprof(stop <-chan struct{}) error {
 	// 注意这里主要是为了模拟服务意外退出，用于验证一个服务退出，其他服务同时退出的场景
 	go func() {
@@ -113,15 +112,23 @@ func pprof(stop <-chan struct{}) error {
 	return fmt.Errorf("mock pprof exit")
 }
 
+func app(stop <-chan struct{}) error {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("pong"))
+	})
+	return server(mux, ":8080", stop)
+}
+
 // 啟動一個服務
 func server(handler http.Handler, addr string, stop <-chan struct{}) error {
 	s := http.Server{
 		Handler: handler,
 		Addr:    addr,
 	}
+
 	// 这个 goroutine 我们可以控制退出，因为只要 stop 这个 channel close 或者是写入数据，这里就会退出
 	// 同时因为调用了 s.Shutdown 之后，http 这个函数启动的 http server 也会优雅退出
-
 	go func() {
 		<-stop
 		log.Printf("server will exiting, addr:%s", addr)
