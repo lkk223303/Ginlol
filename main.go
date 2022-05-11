@@ -69,6 +69,9 @@ func main() {
 	// router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 	// router.Run(fmt.Sprintf(":%d", port))
 
+}
+
+func channelControlServer() {
 	// 用于监听服务退出
 	done := make(chan error, 2)
 	// 用于控制服务退出，传入同一个 stop，做到只要有一个服务退出了那么另外一个服务也会随之退出
@@ -100,7 +103,6 @@ func main() {
 			close(stop)
 		}
 	}
-
 }
 
 func pprof(stop <-chan struct{}) error {
