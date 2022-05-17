@@ -30,8 +30,8 @@
                 }
             }
         },
-        "/demo/v1/hello/{user}": {
-            "get": {
+        "/demo/v1/hello/{user}/{gender}": {
+            "post": {
                 "produces": [
                     "application/json"
                 ],
@@ -46,6 +46,36 @@
                         "name": "user",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "性別",
+                        "name": "gender",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "aaa",
+                        "name": "aaa",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "bbb",
+                        "name": "bbb",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ccc",
+                        "name": "ccc",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "img",
+                        "name": "img",
+                        "in": "formData"
                     }
                 ],
                 "responses": {

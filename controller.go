@@ -25,12 +25,70 @@ func test(c *gin.Context) {
 // @Tags Hello
 // @Produce json
 // @Param user path string true "名字"
+// @Param gender path string false "性別"
+// @Param aaa formData string false "aaa"
+// @Param bbb formData string false "bbb"
+// @Param ccc formData string false "ccc"
+// @Param img formData file false "img"
 // @Success 200 {string} string
-// @Router /demo/v1/hello/{user} [get]
+// @Router /demo/v1/hello/{user}/{gender} [post]
 func hello(c *gin.Context) {
-	name := c.Param("user")
-	greet := "HALO " + name
-	c.JSON(200, greet)
+	var m map[string]interface{}
+	fmt.Printf("c.Request.Method: %v\n", c.Request.Method)
+	fmt.Printf("c.ContentType: %v\n", c.ContentType())
+	fmt.Printf("c.Params: %v\n", c.Params)
+
+	reqBody := make(map[string]interface{})
+	if c.Request.Body != nil {
+		fmt.Printf("c.Request.body: %v\n", c.Request.Body)
+		c.Bind(&m)
+		fmt.Println("map bined: ", m) //application/json
+
+		reqBody["body"] = m
+	}
+	// 處理Param
+	if c.Params != nil {
+		param := make(map[string]string)
+		for k, v := range c.Params {
+			if _, exist := param[v.Key]; exist {
+				param[fmt.Sprintf("%v%v", v.Key, k)] = v.Value
+			} else {
+				param[v.Key] = v.Value
+			}
+		}
+		// reqBody["param"] = make(map[string]string)
+		reqBody["param"] = param
+	}
+
+	// 處理 multipartform
+	par, err := c.MultipartForm()
+	if err == nil {
+		reqBody["multiform"] = make(map[string][]string)
+		reqBody["multiform"] = par.Value
+	} else {
+		fmt.Println("MultipartForm ERR: ", err)
+		// 處理postform
+		// c.Request.ParseForm()
+		if c.Request.PostForm != nil {
+			fmt.Printf("c.Request.form: %v\n", c.Request.PostForm)
+			postform := make(map[string][]string)
+			for k, v := range c.Request.PostForm { //application/x-www-form-urlencoded
+				fmt.Printf("k: %v\n", k)
+				fmt.Printf("v: %v\n", v)
+				postform[k] = v
+			}
+			reqBody["postform"] = make(map[string][]string)
+			reqBody["postform"] = postform
+		}
+	}
+
+	fmt.Printf("ReqBody: %v\n", reqBody)
+
+	for k, v := range c.Request.URL.Query() {
+		fmt.Printf("c.URL.query Key🔑: %v, Value: %v\n", k, v)
+	}
+
+	c.JSON(200, "success")
 }
 
 // @Summary 呈現登入頁面

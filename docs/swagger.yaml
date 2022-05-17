@@ -28,14 +28,34 @@ paths:
       summary: 初始
       tags:
       - Hello
-  /demo/v1/hello/{user}:
-    get:
+  /demo/v1/hello/{user}/{gender}:
+    post:
       parameters:
       - description: 名字
         in: path
         name: user
         required: true
         type: string
+      - description: 性別
+        in: path
+        name: gender
+        type: string
+      - description: aaa
+        in: formData
+        name: aaa
+        type: string
+      - description: bbb
+        in: formData
+        name: bbb
+        type: string
+      - description: ccc
+        in: formData
+        name: ccc
+        type: string
+      - description: img
+        in: formData
+        name: img
+        type: file
       produces:
       - application/json
       responses:

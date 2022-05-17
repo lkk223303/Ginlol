@@ -12,8 +12,13 @@ import (
 
 	_ "Ginlol/docs"
 
+	_ "github.com/gin-contrib/cors"
+	cors "github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
 // db const
@@ -53,22 +58,42 @@ func main() {
 	// }()
 
 	// // Server
-	// router := gin.Default() // 啟動server
-	// port := 8088            // port number setting
-	// url := ginSwagger.URL(fmt.Sprintf("http://localhost:%d/swagger/doc.json", port))
-	// router.LoadHTMLGlob("template/html/*")
-	// router.Static("/assets", "./template/assets")
+	router := gin.Default() // 啟動server
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	router.Use(cors.New(corsConfig))
 
-	// router.GET("/", GoogleLogin)
-	// router.Group("/demo/v1").GET("/hello/:user", hello)
-	// router.GET("/login", loginPage)
-	// router.POST("/login", loginAuth)
-	// router.Group("/oauth").GET("/google/url", LoginWithGoogleOAuth)
-	// router.Group("/oauth").GET("/google/login", GoogleLogin)
+	port := 8888 // port number setting
+	url := ginSwagger.URL(fmt.Sprintf("http://localhost:%d/swagger/doc.json", port))
+	router.LoadHTMLGlob("template/html/*")
+	router.Static("/assets", "./template/assets")
 
-	// router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
-	// router.Run(fmt.Sprintf(":%d", port))
+	router.GET("/", GoogleLogin)
+	router.Group("/demo/v1").POST("/hello/:user/:gender/:gender", hello)
+	router.GET("/login", loginPage)
+	router.POST("/login", loginAuth)
+	router.Group("/oauth").GET("/google/url", LoginWithGoogleOAuth)
+	router.Group("/oauth").GET("/google/login", GoogleLogin)
 
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+	router.Run(fmt.Sprintf(":%d", port))
+
+}
+func swticher(i interface{}) {
+	switch i.(type) {
+	case int:
+		fmt.Println("int: ", fmt.Sprintf("%d", i))
+
+	case float32:
+		fmt.Println("f32: ", fmt.Sprintf("%.2f", i))
+
+	case float64:
+		fmt.Println("f64: ", fmt.Sprintf("%.2f", i))
+
+	case string:
+		fmt.Println("str: ", fmt.Sprintf("%s", i))
+
+	}
 }
 
 func channelControlServer() {
@@ -139,3 +164,104 @@ func server(handler http.Handler, addr string, stop <-chan struct{}) error {
 
 	return s.ListenAndServe()
 }
+
+// 紀錄操作異動
+// func OSRecord(c *gin.Context, manager string, i interface{}) error {
+// 	var act string
+// 	inURL := c.FullPath()
+
+// 	op := c.MustGet(admin.TokenAdminInfo).(*admin.Info)
+
+// 	os := &OperationSaveInfo {
+// 		OperationItem   string `json:"operation_item"`   // 操作項目 (function.group_id = 0 的  code )
+// 		SourceOperation string `json:"source_operation"` // 操作者
+// 		TargetOperation string `json:"target_operation"` // 被操作者
+// 		Note            string `json:"note"`             // 異動內容
+// 		ActType         string `json:"act_type"`
+// 		/* 操作動作
+// 		"I" // 新增
+// 		"U" // 修改
+// 		"D" // 刪除
+// 		*/
+// 	}
+// 	os.SourceOperation = op.Account
+
+// 	for _, m := range OperationItemMap() {
+// 		if m == manager {
+// 			os.OperationItem = m
+// 		} else {
+// 			return fmt.Errorf("OS Record Should specified a manager")
+// 		}
+// 	}
+// 	// switch manager {
+// 	// case OTAM:
+// 	// 	os.OperationItem = OTAM
+// 	// case OTGM:
+// 	// 	os.OperationItem = OTGM
+// 	// case OTPM:
+// 	// 	os.OperationItem = OTPM
+// 	// case OTAgentM:
+// 	// 	os.OperationItem = OTAgentM
+// 	// case OTCM:
+// 	// 	os.OperationItem = OTCM
+// 	// case OTLM:
+// 	// 	os.OperationItem = OTLM
+// 	// case OTSM:
+// 	// 	os.OperationItem = OTSM
+// 	// case OTCFM:
+// 	// 	os.OperationItem = OTCFM
+// 	// case OTPRM:
+// 	// 	os.OperationItem = OTPRM
+// 	// case OTRM:
+// 	// 	os.OperationItem = OTRM
+// 	// case OTMB:
+// 	// 	os.OperationItem = OTMB
+// 	// case OTRP:
+// 	// 	os.OperationItem = OTRP
+// 	// default:
+// 	// 	return fmt.Errorf("OS Record Should specified a manager")
+// 	// }
+
+// 	switch c.Request.Method {
+// 	// case "GET":
+// 	// 	act = "READ"
+// 	case "POST":
+// 		os.ActType = OTActInsert
+// 		act = "CREATE"
+// 	case "PUT":
+// 		os.ActType = OTActUpdate
+// 		act = "UPDATE"
+// 	case "DELETE":
+// 		os.ActType = OTActDelete
+// 		act = "DELETE"
+// 	}
+
+// 	// 去掉參數
+// 	urlStr := strings.Split(inURL, "/")
+// 	var r []string
+// 	for _, k := range urlStr {
+// 		if strings.HasPrefix(k, ":") || strings.HasPrefix(k, "*") {
+// 			k = ""
+// 		}
+// 		if k != "" {
+// 			r = append(r, k)
+// 		}
+// 	}
+
+// 	/*
+// 		儲存格式 VERB resource properties note
+// 		"Insert: chieftain [manual card info], Note:{id:1565454,name:"name"}"
+// 		TODO 統一note格式 by content type
+// 	*/
+// 	contentType := c.ContentType()
+// 	if strings.HasPrefix(contentType, "image/") || strings.HasPrefix(contentType, "audio/") ||
+// 		strings.HasPrefix(contentType, "video/") || contentType == "application/octet-stream" {
+// 		// if data is binary
+// 		os.Note = fmt.Sprintf("%s: %s %s, Note: %s", act, urlStr[1], r[1:], "Data changed")
+// 	} else {
+// 		os.Note = fmt.Sprintf("%s: %s %s, Note: %s", act, urlStr[1], r[1:], i)
+// 	}
+
+// 	s.OperationSave(os)
+// 	return nil
+// }
