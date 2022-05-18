@@ -33,12 +33,13 @@ func test(c *gin.Context) {
 // @Success 200 {string} string
 // @Router /demo/v1/hello/{user}/{gender} [post]
 func hello(c *gin.Context) {
-	var m map[string]interface{}
 	fmt.Printf("c.Request.Method: %v\n", c.Request.Method)
 	fmt.Printf("c.ContentType: %v\n", c.ContentType())
 	fmt.Printf("c.Params: %v\n", c.Params)
 
 	reqBody := make(map[string]interface{})
+
+	var m map[string]interface{}
 	if c.Request.Body != nil {
 		fmt.Printf("c.Request.body: %v\n", c.Request.Body)
 		c.Bind(&m)
@@ -56,7 +57,7 @@ func hello(c *gin.Context) {
 				param[v.Key] = v.Value
 			}
 		}
-		// reqBody["param"] = make(map[string]string)
+
 		reqBody["param"] = param
 	}
 
@@ -84,11 +85,14 @@ func hello(c *gin.Context) {
 
 	fmt.Printf("ReqBody: %v\n", reqBody)
 
+	reqBody["query"] = make(map[string][]string)
+	reqBody["query"] = c.Request.URL.Query()
+
 	for k, v := range c.Request.URL.Query() {
 		fmt.Printf("c.URL.query Key🔑: %v, Value: %v\n", k, v)
 	}
 
-	c.JSON(200, "success")
+	c.JSON(200, reqBody)
 }
 
 // @Summary 呈現登入頁面
