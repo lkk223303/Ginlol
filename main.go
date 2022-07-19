@@ -20,14 +20,7 @@ import (
 var DB *sql.DB
 var RC *redis.Client
 
-const (
-	USERNAME = "kent"
-	PASSWORD = "0000"
-	NETWORK  = "tcp"
-	SERVER   = "127.0.0.1"
-	PORT     = 3306
-	DATABASE = "Ginlol"
-)
+
 
 // @title Ginlol
 // @version 1.0
