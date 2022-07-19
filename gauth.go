@@ -21,9 +21,9 @@ type GoogleUser struct {
 func CreateGoogleOAuth() *oauth2.Config {
 	config := &oauth2.Config{
 		//憑證的 client_id
-		ClientID: "1043531715683-rauouppcer4t41m8mh853r0qv31r676s.apps.googleusercontent.com",
+		ClientID: "xxx",
 		//憑證的 client_secret
-		ClientSecret: "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",
+		ClientSecret: "xxx",
 		//當 Google auth server 驗證過後，接收從 Google auth server 傳來的資訊
 		RedirectURL: "http://localhost:8088/",
 		//告知 Google auth server 授權範圍，在這邊是取得用戶基本資訊和Email，Scopes 為 Google 提供
